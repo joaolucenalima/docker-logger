@@ -11,15 +11,8 @@
     "start": "bun run dist/index.mjs"
   },
   "dependencies": {
-    "@docker-logger/api": "workspace:*",
-    "@docker-logger/env": "workspace:*",
     "@fastify/cors": "11.3.0",
-    "@hono/trpc-server": "^0.4.2",
-    "@trpc/server": "catalog:",
-    "dotenv": "catalog:",
-    "fastify": "5.12.1",
-    "hono": "catalog:",
-    "zod": "catalog:"
+    "fastify": "5.12.1"
   },
   "devDependencies": {
     "typescript": "catalog:",

@@ -3,7 +3,7 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
 import Loader from "./components/loader";
 import { routeTree } from "./routeTree.gen";
-import { queryClient } from "./utils/trpc";
+import { queryClient } from "./utils/query-client";
 
 const router = createRouter({
   routeTree,
