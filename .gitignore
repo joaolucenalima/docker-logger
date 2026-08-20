@@ -26,6 +26,9 @@ build
 
 # Logs
 logs
+!apps/web/src/pages/
+!apps/web/src/pages/logs/
+!apps/web/src/pages/logs/**
 *.log
 npm-debug.log*
 yarn-debug.log*

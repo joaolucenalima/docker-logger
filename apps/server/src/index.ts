@@ -1,34 +1,10 @@
-import { createContext } from "@docker-logger/api/context";
-import { appRouter } from "@docker-logger/api/routers/index";
-import { env } from "@docker-logger/env/server";
-import { trpcServer } from "@hono/trpc-server";
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { logger } from "hono/logger";
+import { buildApp } from "./app";
 
-const app = new Hono();
+const app = await buildApp();
 
-app.use(logger());
-app.use(
-  "/*",
-  cors({
-    origin: env.CORS_ORIGIN,
-    allowMethods: ["GET", "POST", "OPTIONS"],
-  }),
-);
-
-app.use(
-  "/trpc/*",
-  trpcServer({
-    router: appRouter,
-    createContext: (_opts, context) => {
-      return createContext({ context });
-    },
-  }),
-);
-
-app.get("/", (c) => {
-  return c.text("OK");
-});
-
-export default app;
+try {
+  await app.listen({ host: "0.0.0.0", port: Number(process.env.PORT ?? 3000) });
+} catch (error) {
+  app.log.error(error);
+  process.exit(1);
+}

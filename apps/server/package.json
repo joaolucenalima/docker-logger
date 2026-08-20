@@ -5,18 +5,21 @@
   "scripts": {
     "build": "tsdown",
     "check-types": "tsc -b",
+    "test": "bun test src",
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
     "dev": "bun run --hot src/index.ts",
     "start": "bun run dist/index.mjs"
   },
   "dependencies": {
-    "dotenv": "catalog:",
-    "zod": "catalog:",
-    "@docker-logger/env": "workspace:*",
     "@docker-logger/api": "workspace:*",
-    "hono": "catalog:",
+    "@docker-logger/env": "workspace:*",
+    "@fastify/cors": "11.3.0",
+    "@hono/trpc-server": "^0.4.2",
     "@trpc/server": "catalog:",
-    "@hono/trpc-server": "^0.4.2"
+    "dotenv": "catalog:",
+    "fastify": "5.12.1",
+    "hono": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "typescript": "catalog:",

@@ -1,93 +1,45 @@
-# docker-logger
+# Docker Logger
 
-This project was created with [kubojs](https://github.com/albuquerquesz/kubo), a modern TypeScript stack that combines React, TanStack Router, Hono, TRPC, and more.
+MVP para acompanhar logs de containers Docker em tempo real. O navegador acessa apenas a API REST/SSE do servidor; o socket Docker permanece isolado no backend.
 
-## Features
+## Executar localmente
 
-- **TypeScript** - For type safety and improved developer experience
-- **TanStack Router** - File-based routing with full type safety
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **Shared UI package** - shadcn/ui primitives live in `packages/ui`
-- **Hono** - Lightweight, performant server framework
-- **tRPC** - End-to-end type-safe APIs
-- **Bun** - Runtime environment
-- **Biome** - Linting and formatting
-
-## Getting Started
-
-First, install the dependencies:
+Pré-requisitos: [Bun](https://bun.sh) e Docker em execução.
 
 ```bash
 bun install
-```
-
-
-
-
-
-
-
-
-Then, run the development server:
-
-```bash
 bun run dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-The API is running at [http://localhost:3000](http://localhost:3000).
+Acesse `http://localhost:3001`. O Vite encaminha chamadas `/api` para o servidor em `http://localhost:3000`.
 
-## UI Customization
+## Deploy local com Docker e Nginx
 
-React web apps in this stack share shadcn/ui primitives through `packages/ui`.
-
-- Change design tokens and global styles in `packages/ui/src/styles/globals.css`
-- Update shared primitives in `packages/ui/src/components/*`
-- Adjust shadcn aliases or style config in `packages/ui/components.json` and `apps/web/components.json`
-
-### Add more shared components
-
-Run this from the project root to add more primitives to the shared UI package:
+Para subir o frontend estático servido pelo Nginx e o backend conectado ao Docker host:
 
 ```bash
-npx shadcn@latest add accordion dialog popover sheet table -c packages/ui
+docker compose up --build
 ```
 
-Import shared components like this:
+Acesse `http://localhost:8080`. O Nginx encaminha `/api` e o stream SSE para o serviço interno `server`; a porta do backend não é publicada no host.
 
-```tsx
-import { Button } from "@docker-logger/ui/components/button"
+O compose monta `/var/run/docker.sock` no servidor. Esse socket concede privilégios administrativos ao Docker host: exponha o serviço somente em ambientes confiáveis e mantenha os endpoints restritos a leitura de containers e logs.
+
+## Recursos
+
+- containers disponíveis, com nome, ID, imagem e estado;
+- carregamento dos últimos 1.000 logs, limitado a 10.000 por requisição;
+- atualização por SSE, com um stream Docker compartilhado por container;
+- parser do protocolo multiplexado stdout/stderr e reconstrução de linhas fragmentadas;
+- busca textual e filtros stdout/stderr no navegador;
+- lista virtualizada, buffer com batches de 75 ms e limite local de 10.000 linhas;
+- modo LIVE, pausa automática ao subir a lista, contador de novas entradas e retorno ao final;
+- status da conexão SSE e limpeza local dos logs.
+
+## Verificação
+
+```bash
+bun run check-types
+bun run --cwd apps/server test
+bun run build
 ```
-
-### Add app-specific blocks
-
-If you want to add app-specific blocks instead of shared primitives, run the shadcn CLI from `apps/web`.
-
-
-
-## Git Hooks and Formatting
-
-- Run checks: `bun run check`
-
-
-
-## Project Structure
-
-```
-docker-logger/
-├── apps/
-│   ├── web/         # Frontend application (React + TanStack Router)
-│   └── server/      # Backend API (Hono, TRPC)
-├── packages/
-│   ├── ui/          # Shared shadcn/ui components and styles
-│   ├── api/         # API layer / business logic
-```
-
-## Available Scripts
-
-- `bun run dev`: Start all applications in development mode
-- `bun run build`: Build all applications
-- `bun run dev:web`: Start only the web application
-- `bun run dev:server`: Start only the server
-- `bun run check-types`: Check TypeScript types across all apps
-- `bun run check`: Run Biome formatting and linting

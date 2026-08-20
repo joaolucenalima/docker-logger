@@ -1,1 +1,12 @@
 @import "@docker-logger/ui/globals.css";
+
+@layer base {
+  html,
+  body,
+  #app {
+    @apply h-full overflow-hidden;
+  }
+  body {
+    @apply font-mono bg-[#090b0d] text-zinc-200 antialiased;
+  }
+}
