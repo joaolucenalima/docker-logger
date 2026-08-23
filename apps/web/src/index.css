@@ -1,4 +1,11 @@
+@import "@fontsource-variable/jetbrains-mono";
 @import "@docker-logger/ui/globals.css";
+
+@theme {
+  --font-mono:
+    "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, monospace;
+}
 
 @layer base {
   html,
