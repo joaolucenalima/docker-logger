@@ -1,3 +1,4 @@
+import { stripVTControlCharacters } from "node:util";
 import type { LogEntry, LogStream } from "./log.types";
 
 const decoder = new TextDecoder();
@@ -50,12 +51,15 @@ export class DockerLogParser {
 
   private entry(stream: LogStream, value: string): LogEntry {
     const match = value.match(timestampPattern);
+    const message = match?.[2] ?? value;
+
     return {
       id: `${this.containerId}-${Date.now()}-${this.sequence++}`,
       containerId: this.containerId,
       stream,
       timestamp: match?.[1],
-      message: match?.[2] ?? value,
+      message,
+      plainMessage: stripVTControlCharacters(message),
     };
   }
 }

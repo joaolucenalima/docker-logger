@@ -23,8 +23,9 @@ describe("DockerLogParser", () => {
         stream: "stdout",
         timestamp: "2026-08-20T10:00:00.000Z",
         message: "started",
+        plainMessage: "started",
       },
-      { stream: "stderr", message: "failed" },
+      { stream: "stderr", message: "failed", plainMessage: "failed" },
     ]);
   });
 
@@ -43,6 +44,18 @@ describe("DockerLogParser", () => {
     const parser = new DockerLogParser("container-1");
     expect(parser.push(frame(1, "olá, café ☕\n"))[0]).toMatchObject({
       message: "olá, café ☕",
+      plainMessage: "olá, café ☕",
+    });
+  });
+
+  test("preserva ANSI em message e retorna plainMessage normalizada", () => {
+    const parser = new DockerLogParser("container-1");
+    const message =
+      "\u001b[1;31merror\u001b[0m: \u001b[38;5;214mwarning\u001b[0m";
+
+    expect(parser.push(frame(2, `${message}\n`))[0]).toMatchObject({
+      message,
+      plainMessage: "error: warning",
     });
   });
 });

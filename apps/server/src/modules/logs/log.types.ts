@@ -5,4 +5,5 @@ export type LogEntry = {
   containerId: string;
   stream: LogStream;
   message: string;
+  plainMessage: string;
 };

@@ -1,45 +1,178 @@
 # Docker Logger
 
-MVP para acompanhar logs de containers Docker em tempo real. O navegador acessa apenas a API REST/SSE do servidor; o socket Docker permanece isolado no backend.
+Uma interface web leve para acompanhar logs de containers Docker em tempo real. O projeto oferece busca, filtros por stream, interpretação de cores ANSI e uma lista virtualizada preparada para grandes volumes de saída.
 
-## Executar localmente
+O navegador nunca acessa o socket do Docker diretamente. Um backend Fastify consulta a Docker Engine API pelo socket Unix, normaliza os logs e os distribui ao frontend por REST e Server-Sent Events (SSE).
 
-Pré-requisitos: [Bun](https://bun.sh) e Docker em execução.
+## Recursos
+
+- seleção e busca de containers por nome, imagem ou estado;
+- carregamento inicial dos últimos 1.000 logs, configurável até 10.000 por requisição;
+- atualizações em tempo real por SSE, com um único stream Docker compartilhado por container;
+- separação entre `stdout` e `stderr`, com filtros independentes;
+- reconstrução de frames multiplexados e linhas fragmentadas do protocolo Docker;
+- preservação e interpretação de sequências ANSI, incluindo cores padrão, bright, 256 cores e RGB;
+- versões ANSI (`message`) e normalizada (`plainMessage`) de cada mensagem;
+- busca textual executada localmente no navegador;
+- virtualização de até 10.000 entradas, com alturas calculadas pelo Pretext;
+- modo LIVE, pausa automática ao navegar pelo histórico e contador de novas entradas;
+- interface responsiva com JetBrains Mono carregada localmente.
+
+## Arquitetura
+
+```mermaid
+flowchart LR
+    Browser[React + Vite] -->|REST| API[Fastify API]
+    API -->|Docker Engine API| Socket[Docker socket]
+    Socket --> Docker[Containers]
+    Docker --> Socket
+    Socket --> API
+    API -->|SSE| Browser
+```
+
+O repositório é um monorepo Bun organizado em:
+
+```text
+apps/
+├── server/   API, cliente Docker, parser e gerenciamento dos streams
+└── web/      interface React, filtros, SSE e visualização virtualizada
+packages/
+├── config/   configurações TypeScript compartilhadas
+└── ui/       componentes e estilos reutilizáveis
+```
+
+### Fluxo dos logs
+
+1. O backend abre o endpoint de logs da Docker Engine API com timestamps e streams multiplexados.
+2. `DockerLogParser` reconstrói frames e linhas que possam chegar fragmentados.
+3. Cada entrada mantém a mensagem ANSI original em `message` e uma versão sem controles em `plainMessage`.
+4. A API retorna o histórico via REST e transmite novas entradas via SSE.
+5. O frontend interpreta o ANSI para exibição e usa o texto normalizado para calcular a altura das linhas sem provocar reflow.
+
+## Tecnologias
+
+- [Bun](https://bun.sh/) para runtime, workspaces, instalação e testes;
+- [Fastify](https://fastify.dev/) no backend;
+- [React](https://react.dev/) e [Vite](https://vite.dev/) no frontend;
+- [TanStack Router](https://tanstack.com/router) e [TanStack Virtual](https://tanstack.com/virtual);
+- [Tailwind CSS](https://tailwindcss.com/) e componentes compartilhados em `packages/ui`;
+- [Pretext](https://github.com/chenglou/pretext) para medição de texto;
+- Docker Compose e Nginx para execução em containers.
+
+## Requisitos
+
+- [Bun](https://bun.sh/) 1.3 ou superior;
+- Docker Engine em execução;
+- acesso de leitura e escrita ao socket da Docker Engine.
+
+O caminho padrão do socket é `/var/run/docker.sock`. Em ambientes que usam outro caminho, configure `DOCKER_SOCKET`.
+
+## Desenvolvimento local
+
+Clone o repositório, instale as dependências e inicie os dois aplicativos:
 
 ```bash
+git clone <url-do-repositorio>
+cd docker-logger
 bun install
 bun run dev
 ```
 
-Acesse `http://localhost:3001`. O Vite encaminha chamadas `/api` para o servidor em `http://localhost:3000`.
+Acesse [http://localhost:3001](http://localhost:3001). O Vite encaminha as requisições `/api` para o backend em `http://localhost:3000`.
 
-## Deploy local com Docker e Nginx
+Também é possível iniciar os serviços separadamente:
 
-Para subir o frontend estático servido pelo Nginx e o backend conectado ao Docker host:
+```bash
+bun run dev:server
+bun run dev:web
+```
+
+> No Linux, o usuário que executa o backend precisa ter permissão para acessar o socket Docker. Não altere permissões do socket de forma indiscriminada; prefira a configuração recomendada pela sua distribuição.
+
+## Docker Compose
+
+Para construir o frontend, servi-lo pelo Nginx e conectar o backend ao Docker do host:
 
 ```bash
 docker compose up --build
 ```
 
-Acesse `http://localhost:8080`. O Nginx encaminha `/api` e o stream SSE para o serviço interno `server`; a porta do backend não é publicada no host.
+A aplicação ficará disponível em [http://localhost:8080](http://localhost:8080). O Nginx encaminha `/api` e mantém o stream SSE aberto para o serviço interno `server`; a porta do backend não é publicada no host.
 
-O compose monta `/var/run/docker.sock` no servidor. Esse socket concede privilégios administrativos ao Docker host: exponha o serviço somente em ambientes confiáveis e mantenha os endpoints restritos a leitura de containers e logs.
+Para encerrar:
 
-## Recursos
+```bash
+docker compose down
+```
 
-- containers disponíveis, com nome, ID, imagem e estado;
-- carregamento dos últimos 1.000 logs, limitado a 10.000 por requisição;
-- atualização por SSE, com um stream Docker compartilhado por container;
-- parser do protocolo multiplexado stdout/stderr e reconstrução de linhas fragmentadas;
-- busca textual e filtros stdout/stderr no navegador;
-- lista virtualizada, buffer com batches de 75 ms e limite local de 10.000 linhas;
-- modo LIVE, pausa automática ao subir a lista, contador de novas entradas e retorno ao final;
-- status da conexão SSE e limpeza local dos logs.
+## Configuração
 
-## Verificação
+| Variável | Padrão | Descrição |
+| --- | --- | --- |
+| `PORT` | `3000` | Porta HTTP do backend. |
+| `CORS_ORIGIN` | `http://localhost:3001` | Origem permitida pelo CORS. |
+| `DOCKER_SOCKET` | `/var/run/docker.sock` | Caminho do socket da Docker Engine. |
+| `LOG_BUFFER_SIZE` | `10000` | Número máximo de entradas mantidas no buffer compartilhado por stream. |
+
+## API
+
+| Método | Endpoint | Descrição |
+| --- | --- | --- |
+| `GET` | `/` | Verificação simples de disponibilidade. |
+| `GET` | `/api/containers` | Lista todos os containers e seus estados. |
+| `GET` | `/api/containers/:id/logs?tail=1000` | Retorna o histórico do container. `tail` aceita valores entre 1 e 10.000. |
+| `GET` | `/api/containers/:id/logs/stream` | Abre o stream SSE de novas entradas. |
+
+Uma entrada de log possui o seguinte formato:
+
+```json
+{
+  "id": "container-id-1724150000000-1",
+  "containerId": "container-id",
+  "stream": "stdout",
+  "timestamp": "2026-08-20T10:00:00.000Z",
+  "message": "\u001b[32mserver ready\u001b[0m",
+  "plainMessage": "server ready"
+}
+```
+
+## Scripts
+
+| Comando | Descrição |
+| --- | --- |
+| `bun run dev` | Inicia backend e frontend em modo de desenvolvimento. |
+| `bun run build` | Gera os builds de produção de todos os workspaces. |
+| `bun run check-types` | Executa a verificação TypeScript. |
+| `bun run --cwd apps/server test` | Executa os testes do backend. |
+| `bun run format` | Formata o repositório com Biome. |
+| `bun run check` | Aplica as verificações e correções do Biome. |
+
+Antes de enviar uma alteração, execute:
 
 ```bash
 bun run check-types
 bun run --cwd apps/server test
 bun run build
 ```
+
+## Segurança
+
+Montar `/var/run/docker.sock` concede ao backend acesso privilegiado ao Docker host. Mesmo que os endpoints atuais sejam somente de leitura, trate a aplicação como um serviço administrativo:
+
+- execute-a apenas em redes e máquinas confiáveis;
+- não publique o backend diretamente na internet;
+- restrinja CORS e acesso ao proxy reverso;
+- revise alterações nos endpoints antes de realizar um deploy;
+- considere um socket proxy com permissões mínimas em ambientes compartilhados.
+
+## Contribuindo
+
+Issues e pull requests são bem-vindos. Para contribuir:
+
+1. crie um fork e uma branch descritiva;
+2. mantenha as mudanças pequenas e focadas;
+3. adicione ou atualize testes quando alterar comportamento;
+4. execute as verificações locais;
+5. descreva no pull request o problema, a solução e como validar o resultado.
+
+Ao reportar um bug, inclua o sistema operacional, versões do Bun e Docker, passos para reprodução e logs relevantes sem dados sensíveis.

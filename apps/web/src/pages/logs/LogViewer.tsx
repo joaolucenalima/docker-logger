@@ -3,6 +3,7 @@ import { Button } from "@docker-logger/ui/components/button";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { AnsiText } from "@/components/AnsiText";
 import { useLogStore } from "@/entities/log/log.store";
 import type { LogEntry } from "@/entities/log/log.types";
 
@@ -93,7 +94,7 @@ export function LogViewer({
     getScrollElement: () => parentRef.current,
     getItemKey: (index) => logs[index]?.id ?? index,
     estimateSize: (index) =>
-      estimateRowHeight(logs[index]?.message ?? "", textWidth),
+      estimateRowHeight(logs[index]?.plainMessage ?? "", textWidth),
     overscan: 12,
   });
 
@@ -183,7 +184,7 @@ export function LogViewer({
                       : "wrap-break-word min-w-0 flex-1 whitespace-pre-wrap text-zinc-300"
                   }
                 >
-                  {log.message}
+                  <AnsiText>{log.message}</AnsiText>
                 </span>
               </div>
             );

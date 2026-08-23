@@ -4,5 +4,6 @@ export type LogEntry = {
   containerId: string;
   stream: "stdout" | "stderr";
   message: string;
+  plainMessage: string;
 };
 export type ConnectionStatus = "connecting" | "connected" | "disconnected";

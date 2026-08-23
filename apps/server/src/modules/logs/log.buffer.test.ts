@@ -6,6 +6,7 @@ const log = (id: string) => ({
   containerId: "c",
   stream: "stdout" as const,
   message: id,
+  plainMessage: id,
 });
 
 describe("LogBuffer", () => {
