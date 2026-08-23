@@ -1,0 +1,25 @@
+{
+  "name": "@docker-logger/api",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "type": "module",
+  "scripts": {},
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@docker-logger/config": "workspace:*",
+    "hono": "catalog:"
+  },
+  "dependencies": {
+    "dotenv": "catalog:",
+    "zod": "catalog:",
+    "@docker-logger/env": "workspace:*",
+    "@trpc/server": "catalog:",
+    "@trpc/client": "catalog:"
+  }
+}

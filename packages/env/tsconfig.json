@@ -1,0 +1,3 @@
+{
+  "extends": "@docker-logger/config/tsconfig.base.json"
+}

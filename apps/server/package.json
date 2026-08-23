@@ -1,0 +1,28 @@
+{
+  "name": "server",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsdown",
+    "check-types": "tsc -b",
+    "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
+    "dev": "bun run --hot src/index.ts",
+    "start": "bun run dist/index.mjs"
+  },
+  "dependencies": {
+    "dotenv": "catalog:",
+    "zod": "catalog:",
+    "@docker-logger/env": "workspace:*",
+    "@docker-logger/api": "workspace:*",
+    "hono": "catalog:",
+    "@trpc/server": "catalog:",
+    "@hono/trpc-server": "^0.4.2"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "tsdown": "0.22.0",
+    "unrun": "^0.3.1",
+    "@docker-logger/config": "workspace:*",
+    "@types/bun": "catalog:"
+  }
+}
