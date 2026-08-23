@@ -15,7 +15,7 @@ export function LogViewer({
   error?: string;
 }) {
   const parentRef = useRef<HTMLDivElement>(null);
-  
+
   const { isLive, pendingCount, setLive } = useLogStore();
 
   const virtualizer = useVirtualizer({
@@ -26,7 +26,8 @@ export function LogViewer({
   });
 
   useEffect(() => {
-    if (isLive && logs.length) virtualizer.scrollToIndex(logs.length - 1, { align: "end" });
+    if (isLive && logs.length)
+      virtualizer.scrollToIndex(logs.length - 1, { align: "end" });
   }, [isLive, logs.length, virtualizer]);
 
   const onScroll = () => {
@@ -58,8 +59,15 @@ export function LogViewer({
 
   return (
     <div className="relative min-h-0 flex-1 border border-zinc-800 bg-[#0c0f12]">
-      <div ref={parentRef} onScroll={onScroll} className="scrollbar-thin h-full overflow-auto">
-        <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
+      <div
+        ref={parentRef}
+        onScroll={onScroll}
+        className="scrollbar-thin h-full overflow-auto"
+      >
+        <div
+          className="relative w-full"
+          style={{ height: virtualizer.getTotalSize() }}
+        >
           {virtualizer.getVirtualItems().map((item) => {
             const log = logs[item.index];
             return (
@@ -72,7 +80,9 @@ export function LogViewer({
                   {log.stream === "stderr" ? "!" : ">"}
                 </span>
                 <span className="w-52 shrink-0 text-zinc-600">
-                  {log.timestamp ? new Date(log.timestamp).toLocaleString() : "--"}
+                  {log.timestamp
+                    ? new Date(log.timestamp).toLocaleString()
+                    : "--"}
                 </span>
                 <span
                   className={
@@ -105,4 +115,3 @@ export function LogViewer({
     </div>
   );
 }
-

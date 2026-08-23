@@ -26,6 +26,7 @@
     "check-types": "bun run --filter '*' check-types",
     "dev:web": "bun run --filter web dev",
     "dev:server": "bun run --filter server dev",
+    "format": "biome format --write .",
     "check": "biome check --write ."
   },
   "dependencies": {},
