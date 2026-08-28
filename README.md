@@ -4,6 +4,14 @@ Docker Logger is a lightweight web interface for viewing Docker container logs
 in real time. It runs as a single container and connects to the Docker Engine
 through the host's Unix socket.
 
+<p align="center">
+  <img
+    src="docs/images/docker-logger.png"
+    alt="Docker Logger interface"
+    width="900"
+  />
+</p>
+
 ## Features
 
 - Browse and search containers by name, image, or status.
@@ -96,9 +104,10 @@ bun run dev:web
 
 The application supports these environment variables:
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `PORT` | `3000` | HTTP port used by the server. |
-| `CORS_ORIGIN` | `http://localhost:3001` | Allowed origin during local development. |
-| `DOCKER_SOCKET` | `/var/run/docker.sock` | Docker Engine Unix socket path. |
-| `LOG_BUFFER_SIZE` | `10000` | Maximum buffered entries for each shared log stream. |
+| Variable          | Default                 | Description                                          |
+| ----------------- | ----------------------- | ---------------------------------------------------- |
+| `PORT`            | `3000`                  | HTTP port used by the server.                        |
+| `CORS_ORIGIN`     | `http://localhost:3001` | Allowed origin during local development.             |
+| `DOCKER_SOCKET`   | `/var/run/docker.sock`  | Docker Engine Unix socket path.                      |
+| `LOG_BUFFER_SIZE` | `10000`                 | Maximum buffered entries for each shared log stream. |
+
