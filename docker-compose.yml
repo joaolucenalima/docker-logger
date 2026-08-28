@@ -1,23 +1,27 @@
 services:
-  server:
+  docker-logger:
+    image: joaolucenalima/docker-logger:latest
     build:
       context: .
-      dockerfile: apps/server/Dockerfile
+      dockerfile: Dockerfile
     environment:
       PORT: 3000
-      CORS_ORIGIN: http://localhost:8080
-    expose:
-      - "3000"
+      DOCKER_SOCKET: /var/run/docker.sock
+      LOG_BUFFER_SIZE: 10000
+    ports:
+      - "8080:3000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    restart: unless-stopped
-
-  web:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-    depends_on:
-      - server
-    ports:
-      - "8080:80"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bun",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
     restart: unless-stopped

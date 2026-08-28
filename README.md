@@ -30,7 +30,9 @@ flowchart LR
     API -->|SSE| Browser
 ```
 
-O repositório é um monorepo Bun organizado em:
+Em produção, o Fastify também serve o build estático do frontend. Assim, toda a
+aplicação é distribuída em uma única imagem e executada por um único processo
+HTTP. O repositório é um monorepo Bun organizado em:
 
 ```text
 apps/
@@ -57,7 +59,7 @@ packages/
 - [TanStack Router](https://tanstack.com/router) e [TanStack Virtual](https://tanstack.com/virtual);
 - [Tailwind CSS](https://tailwindcss.com/) e componentes compartilhados em `packages/ui`;
 - [Pretext](https://github.com/chenglou/pretext) para medição de texto;
-- Docker Compose e Nginx para execução em containers.
+- Docker e Docker Compose para execução em containers.
 
 ## Requisitos
 
@@ -91,19 +93,39 @@ bun run dev:web
 
 ## Docker Compose
 
-Para construir o frontend, servi-lo pelo Nginx e conectar o backend ao Docker do host:
+Para construir a imagem única e conectar a aplicação ao Docker do host:
 
 ```bash
 docker compose up --build
 ```
 
-A aplicação ficará disponível em [http://localhost:8080](http://localhost:8080). O Nginx encaminha `/api` e mantém o stream SSE aberto para o serviço interno `server`; a porta do backend não é publicada no host.
+A aplicação ficará disponível em [http://localhost:8080](http://localhost:8080).
+O Fastify serve a interface, a API e o stream SSE pela mesma porta.
 
 Para encerrar:
 
 ```bash
 docker compose down
 ```
+
+Também é possível usar diretamente a imagem publicada no Docker Hub:
+
+```bash
+docker run --rm \
+  --name docker-logger \
+  -p 8080:3000 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  joaolucenalima/docker-logger:latest
+```
+
+Para construir a imagem sem o Compose:
+
+```bash
+docker build -t docker-logger .
+```
+
+Ao iniciar como `root`, a imagem identifica o grupo do socket montado, concede
+esse grupo ao usuário `bun` e executa a aplicação sem privilégios de root.
 
 ## Configuração
 
@@ -114,11 +136,14 @@ docker compose down
 | `DOCKER_SOCKET` | `/var/run/docker.sock` | Caminho do socket da Docker Engine. |
 | `LOG_BUFFER_SIZE` | `10000` | Número máximo de entradas mantidas no buffer compartilhado por stream. |
 
+`STATIC_ROOT` aponta para os arquivos compilados do frontend e já vem definido
+como `/app/public` na imagem. Normalmente não é necessário alterá-lo.
+
 ## API
 
 | Método | Endpoint | Descrição |
 | --- | --- | --- |
-| `GET` | `/` | Verificação simples de disponibilidade. |
+| `GET` | `/health` | Verificação simples de disponibilidade. |
 | `GET` | `/api/containers` | Lista todos os containers e seus estados. |
 | `GET` | `/api/containers/:id/logs?tail=1000` | Retorna o histórico do container. `tail` aceita valores entre 1 e 10.000. |
 | `GET` | `/api/containers/:id/logs/stream` | Abre o stream SSE de novas entradas. |
@@ -154,6 +179,22 @@ bun run check-types
 bun run --cwd apps/server test
 bun run build
 ```
+
+## Publicação da imagem
+
+O workflow `.github/workflows/docker-publish.yml` valida a imagem em pull
+requests e publica um manifesto para `linux/amd64` e `linux/arm64` em pushes na
+branch `main` e em tags como `v1.2.3`.
+
+Configure no repositório GitHub:
+
+- a variável `DOCKERHUB_USERNAME` com o usuário do Docker Hub;
+- o secret `DOCKERHUB_TOKEN` com um access token que possa publicar em
+  `joaolucenalima/docker-logger`.
+
+A branch `main` atualiza `latest` e uma tag `sha-...`. Uma tag Git `v1.2.3`
+publica `1.2.3`, `1.2`, `1` e a tag do commit. Pré-releases não atualizam
+`latest`.
 
 ## Segurança
 
